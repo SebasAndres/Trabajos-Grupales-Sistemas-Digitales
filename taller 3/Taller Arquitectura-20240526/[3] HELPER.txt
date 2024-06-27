@@ -18,4 +18,5 @@
 38:  00000073  ecall
 
 
-[b] Ejecutar el nuevo programa desde el PC=0x00 no cambia el flujo porque las instrucciones tambien estan desplazadas.
+[b] Ejecutar el nuevo programa desde el PC=0x00 cambia el flujo porque al ejecutar el `lw x12 0(x11)` con x11=4, vamos a estar 
+guardando en x12 el valor 0005a603, correspondiente a la propia instruccion `lw x12 0(x11)`.

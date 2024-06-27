@@ -18,43 +18,62 @@ epilogo:                        # 13
 
 [a] Indicar posiciones de memoria de cada etiqueta.
 
-li a0,4228                      # 0x00
-li a1,2114                      # 0x04
-jal ra,resta                    # 0x08
-fin: beq zero, zero, fin        # 0x0C <-- etiqueta
-resta:                          # 0x10 <-- etiqueta
-prologo: addi sp, sp, -4        # 0x14 <-- etiqueta
-    sw ra,0(sp)                 # 0x18 
-    sub a0,a0,a1                # 0x1C
-    beq a0,zero,epilogo         # 0x20
-sigo: jal ra,resta              # 0x24 <-- etiqueta
-epilogo:                        # 0x28 <-- etiqueta
-    lw ra,0(sp)                 # 0x2C
-    addi sp,sp,4                # 0x30
-    ret                         # 0x34
+0:        00001537        lui x10 0x1
+4:        08450513        addi x10 x10 132
+8:        000015b7        lui x11 0x1
+c:        84258593        addi x11 x11 -1982
+10:        008000ef        jal x1 8 <resta>
+
+00000014 <fin>:
+    14:        00000063        beq x0 x0 0 <fin>
+
+00000018 <resta>:
+    18:        ffc10113        addi x2 x2 -4
+    1c:        00112023        sw x1 0 x2
+    20:        40b50533        sub x10 x10 x11
+    24:        00050463        beq x10 x0 8 <epilogo>
+
+00000028 <sigo>:
+    28:        ff1ff0ef        jal x1 -16 <resta>
+
+0000002c <epilogo>:
+    2c:        00012083        lw x1 0 x2
+    30:        00410113        addi x2 x2 4
+    34:        00008067        jalr x0 x1 0
 
 [b] Indicar el desplazamiento de las llamadas a etiquetas
 
-li a0,4228                      
-li a1,2114                      
-jal ra,resta                    # desplazamiento de 8 a etiqueta 18 
-fin: beq zero, zero, fin       
-resta:                          
-prologo: addi sp, sp, -4        
-    sw ra,0(sp)                  
-    sub a0,a0,a1                
-    beq a0,zero,epilogo         # desplazamiento de 0 (loop infinito) 
-sigo: jal ra,resta              # desplazamiento de -16 a resta  
-epilogo:                        
-    lw ra,0(sp)                 
-    addi sp,sp,4                
-    ret                         
+0:        00001537        lui x10 0x1
+4:        08450513        addi x10 x10 132
+8:        000015b7        lui x11 0x1
+c:        84258593        addi x11 x11 -1982
+10:       008000ef        jal x1 8 <resta>
+
+00000014 <fin>:
+    14:        00000063        beq x0 x0 0 <fin>
+
+00000018 <resta>:
+    18:        ffc10113        addi x2 x2 -4
+    1c:        00112023        sw x1 0 x2
+    20:        40b50533        sub x10 x10 x11
+    24:        00050463        beq x10 x0 8 <epilogo>
+
+00000028 <sigo>:
+    28:        ff1ff0ef        jal x1 -16 <resta>
+
+0000002c <epilogo>:
+    2c:        00012083        lw x1 0 x2
+    30:        00410113        addi x2 x2 4
+    34:        00008067        jalr x0 x1 0
+
+(00000014) estas posiciones de memoria de las etiquetas apuntan a bytes, por eso 
+sumarle 8 a una posicion de memoria representa 32 bits mas.
 
 [c] Indique el rango de constantes, en decimal y binario que pueden utilizarse en la instruccion LI.
 ¿Coinciden con el rango del imm de la instruccion ADDI?
 
-- La pseudo-instrucción LI puede cargar cualquier valor inmediato en un registro. 
-- En cambio, para ADDI hay 12 bits asignados con signo para el imm (-2048 a 2047). 
+- La pseudo-instrucción LI, al igual que ADDI, tiene 12 bits asignados con signo para el imm (-2048 a 2047).
+  De hecho, LI se traduce a una instruccion ADDI o ADDI y LUI (segun si esta en rango). 
 
 [d] ¿Como resuelve los valores inmediatos que no son representables en 12 bits C2?
 
@@ -86,12 +105,32 @@ ra (Return Address): Almacena la dirección de retorno cuando se llama a una sub
                      correctamente al punto de llamada.
 
 Inicio:
-- ra: Basura
-- sp: 0x8000 (por ejemplo, es el tope de la pila de memoria del sistema)
+- ra: 0x00000000
+- sp: 0x7ffffff0
 
 Durante:
-- ra: Toma la dirección de retorno después de cada jal.
-- sp: Se decrementa y se incrementa a medida que se reserva y libera espacio en la pila
+
+10: 
+	ra: 0x00000014
+	sp: igual
+
+17: 
+	ra: 0x00000014
+	sp: 0x7fffffec
+
+
+28:
+   	ra: 0x000002c
+	sp: 0x7fffffec
+
+ 
+1C: 	
+	sp: 0x7fffffe8
+	
+34:    
+	ra: 0x0000002c -- primer iteracion
+	ra: 0x00000014 -- segunda
+
 
 Fin Ejecucion:
 - ra: Tiene la direccion de la instruccion `fin` manteniendo el programa en un bucle infinito
@@ -100,7 +139,7 @@ Fin Ejecucion:
 [i] Reemplazar la segunda instruccion li a1,1023 de modo que a1 sea a0 dividido 2 con una unica instruccion.
 
 li a0,4228                      
-sra a1, a0, 1   # shift right arithmetic por un bit ~ dividir por 2 a0 y guardarlo en a1                
+srai a1, a0, 1   # shift right arithmetic immediate por un bit ~ dividir por 2 a0 y guardarlo en a1                
 jal ra,resta                   
 fin: beq zero, zero, fin       
 resta:                          
